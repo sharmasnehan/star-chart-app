@@ -6,7 +6,8 @@
       "Bash(npm run *)",
       "Bash(curl -s http://localhost:5173)",
       "mcp__Claude_Preview__preview_start",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "Bash(node -e ' *)"
     ]
   }
 }

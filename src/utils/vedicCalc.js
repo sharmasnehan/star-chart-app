@@ -1,16 +1,13 @@
 import * as Astronomy from 'astronomy-engine';
 import { NAKSHATRAS, RASHIS } from './vedicData.js';
 
-// Lahiri ayanamsa (degrees) — precession correction to convert tropical to sidereal
-// Using a simplified linear approximation valid for modern dates
-function getLahiriAyanamsa(date) {
-  // J2000.0 epoch: Jan 1.5, 2000
-  const J2000 = new Date('2000-01-01T12:00:00Z');
-  const yearsSinceJ2000 = (date - J2000) / (365.25 * 24 * 3600 * 1000);
-  // Lahiri ayanamsa at J2000 ≈ 23.85 degrees, precessing at ~50.3"/year
-  const ayanamsaAtJ2000 = 23.85;
-  const precessionRate = 50.3 / 3600; // degrees per year
-  return ayanamsaAtJ2000 + precessionRate * yearsSinceJ2000;
+// Lahiri ayanamsa at J2000 epoch.
+// astronomy-engine returns longitude in the J2000 ecliptic frame, so the
+// precession between J2000 and the birth date cancels out of sidereal longitude.
+// Using a time-invariant ayanamsa here is therefore correct (and more accurate
+// than applying a drift to a J2000-frozen longitude).
+function getLahiriAyanamsa() {
+  return 23.85;
 }
 
 function normalizeAngle(deg) {
@@ -34,7 +31,7 @@ export function calculateVedicDetails(dateStr, timeStr, latitude, longitude, tzO
   const tropicalLongitude = normalizeAngle(ecliptic.elon);
 
   // Apply Lahiri ayanamsa to get sidereal longitude
-  const ayanamsa = getLahiriAyanamsa(birthDateUTC);
+  const ayanamsa = getLahiriAyanamsa();
   const siderealLongitude = normalizeAngle(tropicalLongitude - ayanamsa);
 
   // Calculate Rashi (0-11), each rashi = 30°
@@ -79,30 +76,47 @@ export async function geocodeLocation(query) {
   }));
 }
 
-// Get timezone offset in hours for a lat/lon at a given date using timeapi.io
+// Compute the UTC offset (in hours) that applies at a specific instant
+// in the given IANA timezone — honors historical DST transitions.
+function offsetHoursForInstant(ianaZone, dateStr, timeStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const [h, mi] = timeStr.split(':').map(Number);
+  // Treat the entered local time as if it were UTC; we'll measure how the
+  // same instant renders in ianaZone and derive the offset from the delta.
+  const asIfUTC = Date.UTC(y, m - 1, d, h, mi);
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone: ianaZone,
+    hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  });
+  const parts = Object.fromEntries(
+    dtf.formatToParts(new Date(asIfUTC))
+      .filter(p => p.type !== 'literal')
+      .map(p => [p.type, p.value])
+  );
+  const asLocalMs = Date.UTC(
+    +parts.year, +parts.month - 1, +parts.day,
+    +parts.hour, +parts.minute, +parts.second
+  );
+  return (asLocalMs - asIfUTC) / 3600000;
+}
+
+// Get timezone offset in hours for a lat/lon AT THE BIRTH MOMENT (honors
+// historical DST) using timeapi.io to resolve the IANA zone.
 export async function getTimezoneOffset(lat, lon, dateStr, timeStr) {
   try {
-    // Use a public timezone API
     const url = `https://timeapi.io/api/timezone/coordinate?latitude=${lat}&longitude=${lon}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('Timezone lookup failed');
     const data = await res.json();
 
-    // timeapi returns currentUtcOffset.seconds
-    if (data.currentUtcOffset?.seconds !== undefined) {
-      return data.currentUtcOffset.seconds / 3600;
+    if (data.timeZone) {
+      return offsetHoursForInstant(data.timeZone, dateStr, timeStr);
     }
-    // Fallback: parse from dstOffset or utcOffset string
-    if (data.utcOffset) {
-      const match = data.utcOffset.match(/([+-])(\d{2}):(\d{2})/);
-      if (match) {
-        const sign = match[1] === '+' ? 1 : -1;
-        return sign * (parseInt(match[2]) + parseInt(match[3]) / 60);
-      }
-    }
-    throw new Error('Could not parse timezone');
+    throw new Error('No IANA zone returned');
   } catch {
-    // Final fallback: rough offset from longitude
+    // Final fallback: rough offset from longitude (no DST)
     return Math.round(lon / 15);
   }
 }
