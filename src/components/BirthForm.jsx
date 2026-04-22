@@ -74,7 +74,7 @@ export default function BirthForm({ onSubmit, loading }) {
           <input
             id="location"
             type="text"
-            placeholder="e.g. Mumbai, India"
+            placeholder="city, state, country"
             value={locationQuery}
             onChange={e => {
               setLocationQuery(e.target.value);

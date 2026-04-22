@@ -14,7 +14,7 @@ export default function VedicChart({ result, onReset }) {
     { key: 'shadow',     title: 'Shadow Side',           body: nakshatra.shadow },
     { key: 'love',       title: 'Love & Relationships',  body: nakshatra.love },
     { key: 'career',     title: 'Career & Purpose',      body: nakshatra.career },
-    { key: 'spiritual',  title: 'Spiritual Path',        body: nakshatra.spiritual },
+    { key: 'spiritual',  title: 'Growth & Meaning',      body: nakshatra.spiritual },
   ];
 
   return (

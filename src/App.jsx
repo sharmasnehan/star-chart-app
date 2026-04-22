@@ -48,7 +48,7 @@ export default function App() {
       </main>
 
       <footer className="app-footer">
-        <p>Calculations use the Lahiri ayanamsa (Chitrapaksha) · Sidereal zodiac · 27 Nakshatras</p>
+        <p>Based on the sidereal Moon position at your birth</p>
       </footer>
     </div>
   );
