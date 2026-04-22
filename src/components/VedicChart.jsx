@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { PLANET_SYMBOLS, RASHI_SYMBOLS } from '../utils/vedicData.js';
+import Compatibility from './Compatibility.jsx';
 
 export default function VedicChart({ result, onReset }) {
   const { rashi, nakshatra, pada, ayanamsa, moonLongitude, birthDateUTC } = result;
   const rashiSymbol = RASHI_SYMBOLS[rashi.name] || '';
   const lordSymbol = PLANET_SYMBOLS[nakshatra.lord] || '';
   const rashiLordSymbol = PLANET_SYMBOLS[rashi.lord] || '';
+  const [copied, setCopied] = useState(false);
 
   const padaRoman = ['I', 'II', 'III', 'IV'][pada - 1];
 
@@ -16,6 +18,23 @@ export default function VedicChart({ result, onReset }) {
     { key: 'career',     title: 'Career & Purpose',      body: nakshatra.career },
     { key: 'spiritual',  title: 'Growth & Meaning',      body: nakshatra.spiritual },
   ];
+
+  const copyText = `Moon Rashi: ${rashi.name} (${rashi.english})
+Rashi Lord: ${rashi.lord}
+Nakshatra: ${nakshatra.name}
+Nakshatra Lord: ${nakshatra.lord}
+Nakshatra Deity: ${nakshatra.deity}
+Pada: ${pada}`;
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(copyText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   return (
     <div className="chart-container">
@@ -38,6 +57,10 @@ export default function VedicChart({ result, onReset }) {
         <DetailCard label="Nakshatra Deity"  value={nakshatra.deity}                     symbol="✦" />
         <DetailCard label="Pada"             value={`${pada} (${padaRoman})`}            symbol="◈" />
       </div>
+
+      <button className={`copy-btn ${copied ? 'copied' : ''}`} onClick={handleCopy}>
+        {copied ? '✓ Copied to clipboard' : '⧉ Copy These Details'}
+      </button>
 
       <div className="divider-line">
         <span>✦ Your Cosmic Portrait ✦</span>
@@ -62,6 +85,8 @@ export default function VedicChart({ result, onReset }) {
         <span>Lahiri Ayanamsa: {ayanamsa.toFixed(2)}°</span>
         <span>Birth UTC: {birthDateUTC.toUTCString().replace(' GMT', '')}</span>
       </div>
+
+      <Compatibility myResult={result} />
 
       <button className="reset-btn" onClick={onReset}>
         ← Calculate Another Chart

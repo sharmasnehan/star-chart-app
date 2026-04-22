@@ -1,4 +1,6 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html { -webkit-text-size-adjust: 100%; }
 
 :root {
   --bg: #06040f;
@@ -19,6 +21,8 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
   background-image:
     radial-gradient(ellipse at 20% 20%, rgba(120, 40, 200, 0.15) 0%, transparent 60%),
     radial-gradient(ellipse at 80% 80%, rgba(60, 20, 120, 0.2) 0%, transparent 60%),

@@ -27,7 +27,7 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <div className="header-ornament">✦ ✦ ✦</div>
-        <h1 className="app-title">Vedic Astrology</h1>
+        <h1 className="app-title">CelestialYou</h1>
         <div className="header-ornament">✦ ✦ ✦</div>
       </header>
 
